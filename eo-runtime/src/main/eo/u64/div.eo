@@ -72,21 +72,17 @@
       00-00-00-00-00-00-00-00.as-u64
       u64 00-00-00-00-00-00-00-2A > [message]
 
-  div. --> stops-on-division-by-zero
-    00-00-00-00-00-00-00-02.as-u64
-    00-00-00-00-00-00-00-00.as-u64
+  eq. ++> can-report-division-by-zero-at-the-maximum
+    "Can't divide FF-FF-FF-FF-FF-FF-FF-FF by u64 zero"
+    div.
+      u64 FF-FF-FF-FF-FF-FF-FF-FF
+      u64 00-00-00-00-00-00-00-00
+      I
 
   eq. ++> can-report-division-by-zero-at-the-sign-bit
     "Can't divide 80-00-00-00-00-00-00-00 by u64 zero"
     div.
       u64 80-00-00-00-00-00-00-00
-      u64 00-00-00-00-00-00-00-00
-      I
-
-  eq. ++> can-report-division-by-zero-at-the-maximum
-    "Can't divide FF-FF-FF-FF-FF-FF-FF-FF by u64 zero"
-    div.
-      u64 FF-FF-FF-FF-FF-FF-FF-FF
       u64 00-00-00-00-00-00-00-00
       I
 
@@ -96,3 +92,7 @@
       u64 00-00-00-00-00-00-00-2A
       u64 00-00-00-00-00-00-00-00
       I
+
+  div. --> stops-on-division-by-zero
+    00-00-00-00-00-00-00-02.as-u64
+    00-00-00-00-00-00-00-00.as-u64
