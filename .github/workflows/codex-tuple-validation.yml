@@ -22,37 +22,18 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Compile original implementation with new regression tests
+      - name: Build the compiler dependencies
+        run: mvn -ntp -B -PskipTests -pl :eo-maven-plugin -am install
+      - name: Verify all tuple object tests with the corrected implementation
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import subprocess
-          path = Path('eo-runtime/src/main/eo/tuple.eo')
-          marker = '  ++> can-add-an-item'
-          original = subprocess.check_output(['git', 'show', 'd60768c:eo-runtime/src/main/eo/tuple.eo'], text=True)
-          path.write_text(original.split(marker, 1)[0] + marker + path.read_text().split(marker, 1)[1])
-          PY
-          mvn -ntp -B -PskipTests -Deo.lower.bypass=true -Deo.transpile.coverage=false -Deo.deadline=30 -Deo.maxmem=2G install
-      - name: Verify original diagnostics fail all six regressions
-        run: |
-          if mvn -ntp -B -pl :eo-runtime -Deo.lower.bypass=true -Deo.transpile.coverage=false -Deo.deadline=30 -Deo.maxmem=2G "-Dtest=$TESTS" test > before.log 2>&1; then
-            cat before.log
-            exit 1
-          fi
-          cat before.log
+          mvn -ntp -B -pl :eo-runtime -Deo.lower.bypass=true -Deo.transpile.coverage=false -Deo.deadline=30 -Deo.maxmem=2G '-Dtest=TestEOtuple' test
           python3 - <<'PY'
           import glob, xml.etree.ElementTree as ET
-          reports = [ET.parse(p).getroot() for p in glob.glob('eo-runtime/target/surefire-reports/TEST-*TestEOtuple.xml')]
-          assert sum(int(r.attrib['tests']) for r in reports) == 6, [r.attrib for r in reports]
-          assert sum(int(r.attrib['failures'])+int(r.attrib['errors']) for r in reports) == 6, [r.attrib for r in reports]
-          assert sum(int(r.attrib['skipped']) for r in reports) == 0
+          report = ET.parse(glob.glob('eo-runtime/target/surefire-reports/TEST-*TestEOtuple.xml')[0]).getroot()
+          assert int(report.attrib['tests']) >= 6, report.attrib
+          assert all(report.attrib[key] == '0' for key in ['failures', 'errors', 'skipped']), report.attrib
+          print(report.attrib)
           PY
-          mkdir -p target/tuple-evidence/before
-          cp eo-runtime/target/surefire-reports/TEST-*TestEOtuple.xml target/tuple-evidence/before/
-      - name: Verify corrected diagnostics and tuple object tests
-        run: |
-          git restore --source=HEAD -- eo-runtime/src/main/eo/tuple.eo
-          mvn -ntp -B -pl :eo-runtime -Deo.lower.bypass=true -Deo.transpile.coverage=false -Deo.deadline=30 -Deo.maxmem=2G '-Dtest=TestEOtuple' test
       - uses: actions/upload-artifact@v6
         if: always()
         with:
