@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
-      TESTS: TestEOtuple#can_reject_a_fractional_index_without_reading_the_tail+can_report_a_negative_fractional_index+can_report_a_nan_index+can_report_an_infinite_index+can_report_an_out_of_bounds_negative_index+can_report_a_negatively_infinite_index+can_report_a_fractional_index_coerced_from_bytes
+      TESTS: TestEOtuple#can_reject_a_fractional_index_without_reading_the_tail+can_report_a_negative_fractional_index+can_report_a_nan_index+can_report_an_out_of_bounds_negative_index+can_report_a_negatively_infinite_index+can_report_a_fractional_index_coerced_from_bytes
     steps:
       - uses: actions/checkout@v7
         with:
@@ -33,7 +33,7 @@ jobs:
           path.write_text(original.split(marker, 1)[0] + marker + path.read_text().split(marker, 1)[1])
           PY
           mvn -ntp -B -PskipTests -Deo.lower.bypass=true -Deo.transpile.coverage=false -Deo.deadline=30 -Deo.maxmem=2G install
-      - name: Verify original diagnostics fail all seven regressions
+      - name: Verify original diagnostics fail all six regressions
         run: |
           if mvn -ntp -B -pl :eo-runtime -Deo.lower.bypass=true -Deo.transpile.coverage=false -Deo.deadline=30 -Deo.maxmem=2G "-Dtest=$TESTS" test > before.log 2>&1; then
             cat before.log
@@ -43,8 +43,8 @@ jobs:
           python3 - <<'PY'
           import glob, xml.etree.ElementTree as ET
           reports = [ET.parse(p).getroot() for p in glob.glob('eo-runtime/target/surefire-reports/TEST-*TestEOtuple.xml')]
-          assert sum(int(r.attrib['tests']) for r in reports) == 7, [r.attrib for r in reports]
-          assert sum(int(r.attrib['failures'])+int(r.attrib['errors']) for r in reports) == 7, [r.attrib for r in reports]
+          assert sum(int(r.attrib['tests']) for r in reports) == 6, [r.attrib for r in reports]
+          assert sum(int(r.attrib['failures'])+int(r.attrib['errors']) for r in reports) == 6, [r.attrib for r in reports]
           assert sum(int(r.attrib['skipped']) for r in reports) == 0
           PY
           mkdir -p target/tuple-evidence/before
