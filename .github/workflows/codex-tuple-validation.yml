@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: Copyright (c) 2016-2026 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: Verify tuple index diagnostics
+on:
+  push:
+    branches: [validate-9915]
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      TESTS: TestEOtuple#can_reject_a_fractional_index_without_reading_the_tail+can_report_a_negative_fractional_index+can_report_a_nan_index+can_report_an_infinite_index+can_report_an_out_of_bounds_negative_index
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Compile original implementation with new regression tests
+        run: |
+          git diff 9e940841372a824c61e91d6851787c3eee81af90 443df4f9565a9f5373cbcaebc19d9f247a5e62bb -- eo-runtime/src/main/eo/tuple.eo | git apply -R
+          mvn -ntp -B -PskipTests -Deo.lower.bypass=true -Deo.transpile.coverage=false -Deo.deadline=30 -Deo.maxmem=2G install
+      - name: Verify original diagnostics fail all five regressions
+        run: |
+          if mvn -ntp -B -pl :eo-runtime -Deo.lower.bypass=true -Deo.transpile.coverage=false -Deo.deadline=30 -Deo.maxmem=2G "-Dtest=$TESTS" test > before.log 2>&1; then
+            cat before.log
+            exit 1
+          fi
+          cat before.log
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          reports = [ET.parse(p).getroot() for p in glob.glob('eo-runtime/target/surefire-reports/TEST-*TestEOtuple.xml')]
+          assert sum(int(r.attrib['tests']) for r in reports) == 5, [r.attrib for r in reports]
+          assert sum(int(r.attrib['failures'])+int(r.attrib['errors']) for r in reports) == 5, [r.attrib for r in reports]
+          assert sum(int(r.attrib['skipped']) for r in reports) == 0
+          PY
+          mkdir -p target/tuple-evidence/before
+          cp eo-runtime/target/surefire-reports/TEST-*TestEOtuple.xml target/tuple-evidence/before/
+      - name: Verify corrected diagnostics and tuple object tests
+        run: |
+          git restore --source=HEAD -- eo-runtime/src/main/eo/tuple.eo
+          mvn -ntp -B -pl :eo-runtime -Deo.lower.bypass=true -Deo.transpile.coverage=false -Deo.deadline=30 -Deo.maxmem=2G '-Dtest=TestEOtuple' test
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: tuple-regression-results
+          path: |
+            before.log
+            target/tuple-evidence/
+            eo-runtime/target/surefire-reports/
