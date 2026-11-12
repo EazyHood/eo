@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 3
+          fetch-depth: 0
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -24,7 +24,7 @@ jobs:
           cache: maven
       - name: Compile the unchanged implementation with the new tests
         run: |
-          git show 86626b4:eo-runtime/src/main/eo/chunk/slot.eo > eo-runtime/src/main/eo/chunk/slot.eo
+          git diff 86626b4 fb15cb3 -- eo-runtime/src/main/eo/chunk/slot.eo | git apply -R
           mvn -ntp -B -PskipTests -Deo.lower.bypass=true -Deo.transpile.coverage=false -Deo.deadline=30 -Deo.maxmem=2G install
       - name: Confirm the three regressions fail before the fix
         run: |
