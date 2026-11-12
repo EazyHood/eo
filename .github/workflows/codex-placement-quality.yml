@@ -18,4 +18,4 @@ jobs:
       - name: Run quality checks
         run: mvn -ntp -B -Pqulice -Deo.skip -pl :eo-maven-plugin -am clean process-classes qulice:check
       - name: Run placement regressions
-        run: mvn -ntp -B -pl :eo-maven-plugin '-Dtest=MjPlaceTest,MjUnplaceTest,UnplacingTest,PlaceTest,UnplaceTest' test
+        run: mvn -ntp -B -pl :eo-maven-plugin -am -Dsurefire.failIfNoSpecifiedTests=false '-Dtest=MjPlaceTest,MjUnplaceTest,UnplacingTest,PlaceTest,UnplaceTest' test
