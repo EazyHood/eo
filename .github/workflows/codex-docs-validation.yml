@@ -1,0 +1,36 @@
+name: Validate fallback documentation
+on:
+  push:
+    branches: [validate-9914]
+permissions:
+  contents: read
+jobs:
+  documentation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Check that all 26 changes are confined to header documentation
+        run: |
+          python3 - <<'PY'
+          import pathlib, subprocess
+          names = subprocess.check_output(['git', 'diff', '--name-only', 'd60768c', '--', 'eo-runtime'], text=True).splitlines()
+          assert len(names) == 26, names
+          for name in names:
+              original = subprocess.check_output(['git', 'show', f'd60768c:{name}'], text=True)
+              changed = pathlib.Path(name).read_text()
+              assert original.split('\n+architect', 1)[1] == changed.split('\n+architect', 1)[1], name
+              assert 'When unbound' in changed.split('\n+architect', 1)[0], name
+          print('Verified 26 headers; implementations, metadata, and tests are identical.')
+          PY
+      - name: Build the formatter
+        run: mvn -ntp -B -PskipTests -pl :eo-maven-plugin -am install
+      - name: Check canonical EO formatting
+        run: mvn -ntp -B -pl :eo-runtime eo:register eo:format
