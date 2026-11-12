@@ -39,10 +39,10 @@
         "Given index %s is out of tuple bounds"
         "Index must be an integer, but was %s"
       *
-        i.is-finite.if
+        idx.is-finite.if
           "%f".printf
-            * i
-          string i.as-scientific
+            * idx
+          string idx.as-scientific
   tuple > empty
     T "Can't get tail from the empty tuple"
     T "Can't get head from the empty tuple"
@@ -351,4 +351,18 @@
     at.
       * 1 2 3
       -4
+      I
+
+  eq. ++> can-report-a-negatively-infinite-index
+    "Given index -infinity is out of tuple bounds"
+    at.
+      * 1 2 3
+      ninf
+      I
+
+  eq. ++> can-report-a-fractional-index-coerced-from-bytes
+    "Index must be an integer, but was 1.500000"
+    at.
+      * 1 2 3
+      3F-F8-00-00-00-00-00-00
       I
