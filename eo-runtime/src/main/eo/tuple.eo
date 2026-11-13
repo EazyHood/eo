@@ -216,6 +216,16 @@
       * 1 2
     2
 
+  eq. ++> can-name-a-huge-index-in-the-message
+    "Given index 1.000000e30 is out of tuple bounds"
+    at.
+      *
+        1
+        2
+        3
+      1.0e30
+      I
+
   eq. ++> can-recover-from-a-fractional-index
     "recovered"
     at.
